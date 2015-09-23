@@ -1,1 +1,7 @@
 Deep Learning for Othello
+
+* WTHOR database: http://www.ffothello.org/informatique/la-base-wthor/
+* Format description (in French): http://www.ffothello.org/wthor/Format_WThor.pdf
+* Blog description in English: http://ledpup.blogspot.com/2012/03/computer-reversi-part-15-thor-database.html
+* Code for reading the format: https://github.com/ledpup/Othello/blob/c881b711f504f012476ab2d1342e797954830f11/Assets/Model/Thor/ThorFileProcessor.cs
+* A program that can read and show Thor files: http://www.othbase.net/
