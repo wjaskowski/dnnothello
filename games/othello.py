@@ -11,18 +11,19 @@ BLACK = 2
 SIZE = 8
 WIDTH = SIZE + 2
 
-DIRS = ((-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1))
+DIRS = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+
 
 def new_board():
     board = np.ones((WIDTH, WIDTH), np.int8) * EMPTY
     M = WIDTH // 2
-    board[M-1, M-1] = WHITE
-    board[M-1, M] = BLACK
+    board[M - 1, M - 1] = WHITE
+    board[M - 1, M] = BLACK
     board[M, M] = WHITE
-    board[M, M-1] = BLACK
+    board[M, M - 1] = BLACK
 
-    board[[0, WIDTH-1], :] = WALL
-    board[:, [0, WIDTH-1]] = WALL
+    board[[0, WIDTH - 1], :] = WALL
+    board[:, [0, WIDTH - 1]] = WALL
     return board
 
 
@@ -73,10 +74,11 @@ def is_valid_move(board, move, player):
 
 
 def valid_moves(board, player):
-    for row in range(1,SIZE+1):
-        for col in range(1,SIZE+1):
+    for row in range(1, SIZE + 1):
+        for col in range(1, SIZE + 1):
             if is_valid_move(board, (row, col), player):
                 yield row, col
+
 
 def has_valid_moves(board, player):
     return len(list(valid_moves(board, player))) > 0
@@ -88,17 +90,17 @@ def opponent(player):
 
 
 def get_score(board):
-    b = (board[1:-1,1:-1] == BLACK).sum()
-    w = (board[1:-1,1:-1] == WHITE).sum()
-    return b,w
+    b = (board[1:-1, 1:-1] == BLACK).sum()
+    w = (board[1:-1, 1:-1] == WHITE).sum()
+    return b, w
 
 
 def get_true_score(board):
     b, w = get_score(board)
-    e = SIZE*SIZE - b - w
+    e = SIZE * SIZE - b - w
     if b > w:
-        return b+e, w
+        return b + e, w
     elif b < w:
-        return b, w+e
+        return b, w + e
     else:
-        return b+e//2, w+e//2
+        return b + e // 2, w + e // 2

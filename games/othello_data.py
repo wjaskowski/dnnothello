@@ -1,16 +1,13 @@
-#!/usr/bin/env python3.4
-# -*- coding: utf-8 -*-
-
 import struct
 import glob
 import os
 import pickle
 import gzip
-
 import numpy as np
 import sys
 
-import othello
+from games import othello
+from util.io import save_lmdb
 
 
 def read_wthor(file_name):
@@ -30,14 +27,16 @@ def read_wthor(file_name):
 
 def read_all(path):
     for wtb in glob.glob(os.path.join(path, '*.wtb')):
-        yield from read_wthor(wtb)
+        for true_score, moves in read_wthor(wtb):
+            yield true_score, moves
 
 
-def generate_learning_data(path):
+def generate_learning_data(path='wthor_data'):
     games = read_all(path)
     for i, (true_score, moves) in enumerate(games):
         if i % 1000 == 0: print(i)
-        yield from moves2data(true_score, moves)
+        for board, player, move in moves2data(true_score, moves):
+            yield board, player, move
 
 
 def moves2data(true_score, moves):
@@ -66,7 +65,20 @@ def encode_channels(board, player):
     """
     c1 = board == player
     c2 = board == othello.opponent(player)
-    return np.concatenate((c1[None, ...], c2[None, ...]), axis=0).astype(np.uint8)
+    return np.concatenate((c1[None, ...], c2[None, ...]), axis=0)
+
+
+def create_dataset(out, lmdb=False):
+    data = list(generate_learning_data('wthor_data'))
+
+    x = np.zeros(((len(data),) + (2, 8, 8)), dtype=np.uint8)
+    y = np.zeros(len(data), dtype=np.uint8)
+    for i, (board, player, move) in enumerate(data):
+        x[i] = encode_channels(board, player)
+        y[i] = move
+    if lmdb:
+        save_lmdb(out, x, y)
+    return x, y
 
 
 def get_learning_data():
