@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function
 import numpy as np
 
 WALL = -1
@@ -104,3 +105,14 @@ def get_true_score(board):
         return b, w + e
     else:
         return b + e // 2, w + e // 2
+
+def print_board(board):
+    for row in range(1,SIZE+1):
+        for col in range(1,SIZE+1):
+            if board[row][col] == BLACK:
+                print('* ',end='')
+            elif board[row][col] == WHITE:
+                print('0 ',end='')
+            else:
+                print('- ',end='')
+        print()

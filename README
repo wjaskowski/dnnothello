@@ -1,12 +1,26 @@
-Usage
------
-Generate boards data: 
+Boards data
+-----------
 
 > othello_data.py generate
 
 To use it:
 
 othello_data.get_learning_data()
+
+Benchmark vs. Edax
+------------------
+Prepare:
+> wget http://abulmo.perso.neuf.fr/edax/4.3/edax.4-3-2.zip
+> unzip edax.4-3-2.zip
+> cd edax/4.3.2/src: 
+> make COMP=clang OS=osx
+
+Benchmark:
+* Change EDAX_BIN_PATH in games/benchmark.py
+* Execute main
+
+
+
 
 Resources
 ----
