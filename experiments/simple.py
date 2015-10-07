@@ -21,11 +21,15 @@ if __name__ == '__main__':
 
     parser.add_argument('--gpu', type=int, default=1)
     parser.add_argument('--iters', type=int, default=30000)
+    parser.add_argument('--lr', type=float, default=0.001)
+    parser.add_argument('--gamma', type=float, default=0.1)
+    parser.add_argument('--step', type=int, default=10000)
 
     args = parser.parse_args()
 
     # create train and test sets
-    split_train_test(args.out_path, args.data_path, args.model_type, args.train_batch, args.test_batch, args.iters)
+    split_train_test(args.out_path, args.data_path, args.model_type, args.train_batch, args.test_batch, args.iters,
+                     args.lr, args.gamma, args.step)
 
     # train the networks
     if args.train:

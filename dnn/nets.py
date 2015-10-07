@@ -6,6 +6,7 @@ import numpy as np
 import caffe
 from caffe import layers as L
 from caffe import params as P
+from util.redirector import Redirector
 
 logger = logging.getLogger(__name__)
 
@@ -78,9 +79,16 @@ def cnn_nopool(source, batch_size, input_size=None, deploy=False):
                             bias_filler=dict(type='constant', value=0))
     n.relu4 = L.ReLU(n.conv4, in_place=True)
 
-    n.ip1 = L.InnerProduct(n.relu4, num_output=512, weight_filler=dict(type='gaussian', std=0.01),
+    n.conv5 = L.Convolution(n.relu4, num_output=256, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'),
+                            bias_filler=dict(type='constant', value=0))
+    n.relu5 = L.ReLU(n.conv5, in_place=True)
+    n.conv6 = L.Convolution(n.relu5, num_output=256, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'),
+                            bias_filler=dict(type='constant', value=0))
+    n.relu6 = L.ReLU(n.conv6, in_place=True)
+
+    n.ip1 = L.InnerProduct(n.relu6, num_output=128, weight_filler=dict(type='gaussian', std=0.01),
                            bias_filler=dict(type='constant', value=0))
-    n.relu5 = L.ReLU(n.ip1, in_place=True)
+    n.relu7 = L.ReLU(n.ip1, in_place=True)
     n.dropout1 = L.Dropout(n.ip1, dropout_param=dict(dropout_ratio=0.5), in_place=True)
 
     # n.ip2 = L.InnerProduct(n.ip1, num_output=512, weight_filler=dict(type='gaussian', std=0.01),
@@ -106,14 +114,14 @@ def cnn_nopool(source, batch_size, input_size=None, deploy=False):
         return deploy_str + '\n' + 'layer {' + 'layer {'.join(str(n.to_proto()).split('layer {')[2:])
 
 
-def convert_proto_to_deploy(proto_file, batch_size, patch_size):
+def convert_proto_to_deploy(proto_file, batch_size, channels, patch_size):
     with open(proto_file, 'r') as f:
         train_proto = f.read()
     deploy_str = 'input: {}\n' \
                  'input_dim: {}\n' \
                  'input_dim: {}\n' \
                  'input_dim: {}\n' \
-                 'input_dim: {}'.format('"data"', batch_size, 3, patch_size, patch_size)
+                 'input_dim: {}'.format('"data"', batch_size, channels, patch_size, patch_size)
     softmax_str = 'layer {\n ' \
                   'name: "prob"\n ' \
                   'type: "Softmax"\n ' \
@@ -122,24 +130,24 @@ def convert_proto_to_deploy(proto_file, batch_size, patch_size):
     return deploy_str + '\n' + 'layer {' + 'layer {'.join(train_proto.split('layer {')[2:-2]) + '\n' + softmax_str
 
 
-def create_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model'):
+def create_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model', base_lr=0.1, gamma=0.33, step_size=10000):
     def decorate_with_quotation(text):
         return '\"' + text + '\"'
 
     config = {
         'train_net': decorate_with_quotation(train_net),
         'test_net': decorate_with_quotation(test_net),
-        'test_iter': '4000',
-        'test_interval': '1000',
+        'test_iter': '400',
+        'test_interval': '625',
         'test_initialization': 'false',
 
-        'base_lr': '0.001',
+        'base_lr': base_lr,
         'momentum': '0.9',
         'weight_decay': '0.0005',
 
         'lr_policy': '\"step\"',
-        'gamma': '0.03',
-        'stepsize': '30000',
+        'gamma': gamma,
+        'stepsize': step_size,
 
         'display': '200',
         'max_iter': iters,
@@ -152,8 +160,8 @@ def create_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model'
         fp.writelines([k + ': ' + str(v) + '\n' for k, v in config.iteritems()])
 
 
-def deploy_model(model_dir, data_dir, model_type='cnn', train_batch=256, test_batch=100, iters=30000, prefix='model'):
-
+def deploy_model(model_dir, data_dir, model_type='cnn', train_batch=256, test_batch=100, iters=30000, prefix='model',
+                 lr=0.001, gamma=0.1, step=10000):
     with open(join(model_dir, 'train.prototxt'), 'w') as f:
         f.write(str(getattr(sys.modules[__name__], model_type)(join(data_dir, 'train'), train_batch)))
 
@@ -164,7 +172,26 @@ def deploy_model(model_dir, data_dir, model_type='cnn', train_batch=256, test_ba
                   join(model_dir, 'train.prototxt'),
                   join(model_dir, 'test.prototxt'),
                   iters,
-                  join(model_dir, prefix))
+                  join(model_dir, prefix),
+                  lr,
+                  gamma,
+                  step)
+
+
+def load_net(model_dir, model_name, input_size, batch_size, channels, model_iter, gpu):
+    # deploy the trained net
+    deploy_file = join(model_dir, 'deploy.prototxt')
+    with open(deploy_file, 'w') as f:
+        f.write(convert_proto_to_deploy(join(model_dir, 'train.prototxt'), batch_size, channels, input_size))
+
+    # instantiate the net
+    net_file = join(model_dir, '{}_iter_{}.caffemodel'.format(model_name, model_iter))
+    caffe.set_device(gpu)
+    caffe.set_mode_gpu()
+
+    with Redirector():
+        net = caffe.Net(deploy_file, net_file, caffe.TEST)
+    return net
 
 
 def get_solver(model_dir, device=1):

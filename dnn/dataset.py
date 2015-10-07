@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from sklearn.externals import joblib
 from os.path import join
 
 from sklearn.cross_validation import train_test_split
@@ -11,7 +12,8 @@ from dnn.nets import deploy_model
 __author__ = 'pliskowski'
 
 
-def split_train_test(experiment_dir, data_path, model_type, train_batch, test_batch, iters, test_size=0.33, seed=123):
+def split_train_test(experiment_dir, data_path, model_type, train_batch, test_batch, iters, lr, gamma, step,
+                     test_size=0.33, seed=123):
     model_dir = join(experiment_dir, model_type)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
@@ -22,16 +24,17 @@ def split_train_test(experiment_dir, data_path, model_type, train_batch, test_ba
 
     reader = LMDBReader(data_path)
     data, labels = reader.read_all()
-    le = preprocessing.LabelEncoder()
-    le.fit(labels)
-    labels = le.transform(labels)
+
+    encoder = get_label_encoder(labels)
+    labels = encoder.transform(labels)
+    joblib.dump(encoder, join(dataset_dir, 'encoder.pkl'))
 
     x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=seed)
 
     save_lmdb(join(dataset_dir, 'train'), x_train, y_train)
     save_lmdb(join(dataset_dir, 'test'), x_test, y_test)
 
-    deploy_model(model_dir, dataset_dir, model_type, train_batch, test_batch, iters, model_type)
+    deploy_model(model_dir, dataset_dir, model_type, train_batch, test_batch, iters, model_type, lr, gamma, step)
 
 
 def get_num_unique_labels():
@@ -40,6 +43,15 @@ def get_num_unique_labels():
 
     print np.unique(labels)
     print len(np.unique(labels))
+
+
+def get_label_encoder(labels=None):
+    if labels is None:
+        reader = LMDBReader('../games/train')
+        _, labels = reader.read_all()
+    le = preprocessing.LabelEncoder()
+    le.fit(labels)
+    return le
 
 if __name__ == '__main__':
     get_num_unique_labels()

@@ -46,7 +46,7 @@ def moves2data(true_score, moves):
     player = othello.BLACK
     moves = [m for m in moves if m != 0]  # remove (trailing) zeros
     for move in moves:
-        row, col = move // othello.WIDTH, move % othello.WIDTH
+        row, col = othello.decode_move(move)
         if not othello.is_valid_move(board, (row, col), player):
             player = othello.opponent(player)
             assert othello.is_valid_move(board, (row, col), player)

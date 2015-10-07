@@ -85,6 +85,14 @@ def has_valid_moves(board, player):
     return len(list(valid_moves(board, player))) > 0
 
 
+def encode_move(row, col):
+    return row * WIDTH + col
+
+
+def decode_move(move):
+    return move // WIDTH, move % WIDTH
+
+
 def opponent(player):
     assert player in (WHITE, BLACK)
     return WHITE if player == BLACK else BLACK
@@ -105,6 +113,7 @@ def get_true_score(board):
         return b, w + e
     else:
         return b + e // 2, w + e // 2
+
 
 def print_board(board):
     for row in range(1,SIZE+1):
