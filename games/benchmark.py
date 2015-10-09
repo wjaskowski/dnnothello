@@ -14,29 +14,35 @@ class Edax:
         os.chdir(EDAX_BIN_PATH)
         cmd = [x for x in ('mEdax -q ' + edax_arguments).split(' ') if x != '']
         self.process = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-        self._read_all()
+        out = self._read_all()
         os.chdir(old_dir)
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.process.stdin.write('quit')
+        self.process.stdin.write('quit\n')
 
     def put_move(self, move):
         move_row, move_col = move
         assert 1 <= move_row <= othello.SIZE, "row = " + str(move_row)
         assert 1 <= move_col <= othello.SIZE, "col = " + str(move_col)
 
-        self.process.stdin.write('{}{}\n'.format(chr(ord('A') + move_col - 1), move_row))
+        self.process.stdin.write(b'{}{}\n'.format(chr(ord('A') + move_col - 1), move_row))
         out = self._read_all()
 
     def put_pass(self):
-        self.process.stdin.write('PS\n')
+        self.process.stdin.write(b'PS\n')
         out = self._read_all()
 
     def _read_all(self):
-        return ''.join(iter(lambda: self.process.stdout.read(1), '>'))
+        def read():
+            while True:
+                c = self.process.stdout.read(1)
+                if c == b'>':
+                    break
+                yield c
+        return list(read())
 
     def play_move(self):
         self.process.stdin.write('go\n')
@@ -51,7 +57,6 @@ def play_against_edax(edax_arguments, initial_board, player_to_move, my_color, m
     assert hasattr(my_agent, '__call__'), 'Should be my_agent(board, my_color) -> move'
     assert player_to_move in (othello.WHITE, othello.BLACK)
     assert my_color in (othello.WHITE, othello.BLACK)
-
 
     board = initial_board 
     with Edax(edax_arguments, initial_board, player_to_move) as edax:
@@ -79,6 +84,7 @@ def play_against_edax(edax_arguments, initial_board, player_to_move, my_color, m
 
         return othello.get_score(board)
 
+
 def benchmark_edax(edax_options, num_games, agent):
     my_points = edax_points = wins = loses = draws = 0
     for i in range(num_games):
@@ -104,12 +110,15 @@ def benchmark_edax(edax_options, num_games, agent):
     return my_points, edax_points, wins, draws, loses
 
 
+random.seed(123)
+
 def random_agent(board, my_color):
     return random.choice(list(othello.valid_moves(board, my_color)))
 
+
 if __name__ == '__main__':
     EDAX_BIN_PATH='/Users/Wojciech/projects/edax/edax/4.3.2/bin'
-    my_points, edax_points, wins, draws, loses = benchmark_edax('-l 1', 100, random_agent) # Depth=1
+    my_points, edax_points, wins, draws, loses = benchmark_edax('-l 1', 10, random_agent) # Depth=1
     #my_points, edax_points, wins, draws, loses = benchmark_edax('-l 21', 10, random_agent) # Default, slower
     print('Final result:')
     print(my_points, edax_points, wins, draws, loses)
