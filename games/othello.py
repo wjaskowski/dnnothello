@@ -115,6 +115,24 @@ def get_true_score(board):
         return b + e // 2, w + e // 2
 
 
+def to_edax_str(board, player_to_move):
+    def to_edax(x):
+        if x == BLACK:
+            return 'X'
+        elif x == WHITE:
+            return 'O'
+        else:
+            return '-'
+
+    def gen():
+        for row in range(1, SIZE+1):
+            for col in range(1, SIZE+1):
+                yield to_edax(board[row][col])
+        yield ' '
+        yield to_edax(player_to_move)
+
+    return ''.join(list(gen()))
+
 def print_board(board):
     for row in range(1,SIZE+1):
         for col in range(1,SIZE+1):
