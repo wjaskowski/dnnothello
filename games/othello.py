@@ -133,13 +133,26 @@ def to_edax_str(board, player_to_move):
 
     return ''.join(list(gen()))
 
+def board_to_str(board):
+    s = ''
+    for row in range(1,SIZE+1):
+        for col in range(1,SIZE+1):
+            if board[row][col] == BLACK:
+                s += '* '
+            elif board[row][col] == WHITE:
+                s += 'O '
+            else:
+                s += '- '
+        s += '\n'
+    return s
+
 def print_board(board):
     for row in range(1,SIZE+1):
         for col in range(1,SIZE+1):
             if board[row][col] == BLACK:
                 print('* ',end='')
             elif board[row][col] == WHITE:
-                print('0 ',end='')
+                print('O ',end='')
             else:
                 print('- ',end='')
         print()

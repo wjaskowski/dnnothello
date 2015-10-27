@@ -16,11 +16,11 @@ Prepare:
 > make COMP=clang OS=osx
 
 > wget http://abulmo.perso.neuf.fr/edax/book.21.2011-1-11.7z
-> extract to edax/bin/data and replace the book.dat
+> extract to edax/bin/data and save at book_good.dat
 
 Benchmark:
 * Change EDAX_BIN_PATH in games/benchmark.py
-* Execute main
+* Change & execute main
 
 
 
