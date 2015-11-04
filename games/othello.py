@@ -125,18 +125,19 @@ def to_edax_str(board, player_to_move):
             return '-'
 
     def gen():
-        for row in range(1, SIZE+1):
-            for col in range(1, SIZE+1):
+        for row in range(1, SIZE + 1):
+            for col in range(1, SIZE + 1):
                 yield to_edax(board[row][col])
         yield ' '
         yield to_edax(player_to_move)
 
     return ''.join(list(gen()))
 
+
 def board_to_str(board):
     s = ''
-    for row in range(1,SIZE+1):
-        for col in range(1,SIZE+1):
+    for row in range(1, SIZE + 1):
+        for col in range(1, SIZE + 1):
             if board[row][col] == BLACK:
                 s += '* '
             elif board[row][col] == WHITE:
@@ -146,13 +147,23 @@ def board_to_str(board):
         s += '\n'
     return s
 
+
 def print_board(board):
-    for row in range(1,SIZE+1):
-        for col in range(1,SIZE+1):
+    for row in range(1, SIZE + 1):
+        for col in range(1, SIZE + 1):
             if board[row][col] == BLACK:
-                print('* ',end='')
+                print('* ', end='')
             elif board[row][col] == WHITE:
-                print('O ',end='')
+                print('O ', end='')
             else:
-                print('- ',end='')
+                print('- ', end='')
         print()
+
+
+def invert(board):
+    copied = board.copy()
+    mask_white = board == WHITE
+    mask_black = board == BLACK
+    copied[mask_white] = BLACK
+    copied[mask_black] = WHITE
+    return copied
