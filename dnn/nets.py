@@ -160,6 +160,38 @@ def create_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model'
         fp.writelines([k + ': ' + str(v) + '\n' for k, v in config.iteritems()])
 
 
+def create_rmsprop_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model', base_lr=0.1, gamma=0.33, step_size=10000):
+    def decorate_with_quotation(text):
+        return '\"' + text + '\"'
+
+    config = {
+        'train_net': decorate_with_quotation(train_net),
+        'test_net': decorate_with_quotation(test_net),
+        'test_iter': '400',
+        'test_interval': '625',
+        'test_initialization': 'false',
+
+        'base_lr': base_lr,
+        'momentum': '0',
+        'weight_decay': '0.0005',
+
+        'lr_policy': '\"step\"',
+        'gamma': gamma,
+        'stepsize': step_size,
+
+        'display': '200',
+        'max_iter': iters,
+
+        'snapshot': '5000',
+        'snapshot_prefix': decorate_with_quotation(snapshot_prefix),
+        'solver_mode': 'GPU',
+        'solver_type': 'RMSPROP',
+        'rms_decay': 0.98
+    }
+    with open(out, 'w') as fp:
+        fp.writelines([k + ': ' + str(v) + '\n' for k, v in config.iteritems()])
+
+
 def deploy_model(model_dir, data_dir, model_type='cnn', train_batch=256, test_batch=100, iters=30000, prefix='model',
                  lr=0.001, gamma=0.1, step=10000):
     with open(join(model_dir, 'train.prototxt'), 'w') as f:
@@ -168,7 +200,7 @@ def deploy_model(model_dir, data_dir, model_type='cnn', train_batch=256, test_ba
     with open(join(model_dir, 'test.prototxt'), 'w') as f:
         f.write(str(getattr(sys.modules[__name__], model_type)(join(data_dir, 'test'), test_batch,)))
 
-    create_solver(join(model_dir, 'solver.prototxt'),
+    create_rmsprop_solver(join(model_dir, 'solver.prototxt'),
                   join(model_dir, 'train.prototxt'),
                   join(model_dir, 'test.prototxt'),
                   iters,
