@@ -104,12 +104,21 @@ def data_from_black_perspective(data):
 
 def removed_duplicates(data):
     x = sorted([(list(x.flatten()),y,z) for x,y,z in data])
+    yield data[0]
     for i in range(1, len(x)):
         if x[i-1][0:2] != x[i][0:2] or x[i-1][2] != x[i][2]:
             yield data[i]
 
+def data_with_symmetries(data):
+    for board, player, raw_move in data:
+        move = othello.decode_move(raw_move)
+        for sym_board, sym_move in zip(othello.symmetric(board), othello.symmetric_move(move)):
+            yield sym_board, player, othello.encode_move(*sym_move)
 
-def main_remove_duplicates(data): 
+
+# First experiment 
+def main_remove_duplicates(): 
+    data = pickle.load(open('data.dump', 'rb'))  # Possibly: gzip.load
     print("input: {} positions".format(len(data)))
     data = list(data_from_black_perspective(data))
     data = list(removed_duplicates(data))
@@ -118,23 +127,26 @@ def main_remove_duplicates(data):
     pickle.dump(data, gzip.open('data_nodup.dump', 'wb'))
     print("finished")
 
-def data_with_symmetries(data):
-    for board,player,move in data:
-        for sym_board, sym_move in zip(othello.symmetric(board),othello.symmetric_move(board)):
-            yield sym_board,player,sym_move
+
+# Second experiment 
+def main_extended_symmetric(): 
+    data = pickle.load(gzip.open('data_nodup.dump', 'rb'))
+    print("input: {} positions".format(len(data)))
+    data = list(data_with_symmetries(data))
+    data = list(removed_duplicates(data))
+    random.shuffle(data)
+    print("output: {} positions".format(len(data)))
+    pickle.dump(data, gzip.open('data_sym.dump', 'wb'))
+    print("finished")
+    for dat in data:
+        print(dat)
+        print()
+
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and sys.argv[1] == 'generate':
         data = list(generate_learning_data('wthor_data'))
         pickle.dump(data, gzip.open('data.dump', 'wb'))
 
-    main_remove_duplicates(pickle.load(open('data.dump', 'rb')))
-
-    #data = pickle.load(gzip.open('data_nodup.dump', 'rb'))
-
-    #data = list(remove_duplicates(data_with_symmetries(data[:1000])))
-    #print(len(data))
-
-    #pickle.dump(data, gzip.open('data_nodup_sym.dump', 'wb'))
-
-    #print('end')
+    main_extended_symmetric()
+    #main_remove_duplicates()

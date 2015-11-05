@@ -32,20 +32,24 @@ def symmetric(board):
         for v in [False, True]:
             for r in [False, True]:
                 new = board.copy()
-                if h: new = np.fliplr(new)
-                if v: new = np.flipud(new)
+                if h: new = np.flipud(new)
+                if v: new = np.fliplr(new)
                 if r: new = np.rot90(new)
                 yield new
 
-def symmetric_move(move):
+def rotate_move_ccw(move):
     move_row, move_col = move
+    return SIZE + 1 - move_col, move_row
+
+def symmetric_move(move):
     for h in [False, True]:
         for v in [False, True]:
             for r in [False, True]:
-                if h: move_row = SIZE - move_row
-                if v: move_col = SIZE - move_col
-                if r: new = np.rot90(new) #START_HERE
-                yield new
+                move_row, move_col = move
+                if h: move_row = SIZE - move_row + 1
+                if v: move_col = SIZE - move_col + 1
+                if r: move_row, move_col = rotate_move_ccw((move_row, move_col))
+                yield (move_row, move_col)
 
 
 def inverted(board):
