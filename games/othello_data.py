@@ -9,7 +9,6 @@ import numpy as np
 import sys
 
 from games import othello
-from util.io import save_lmdb
 
 
 def read_wthor(file_name):
@@ -39,11 +38,17 @@ def generate_learning_data(path='wthor_data'):
         if i % 1000 == 0: print(i)
         for board, player, move in moves2data(true_score, moves):
             yield board, player, move
+        if i>0 and i % 1000 == 0:
+            break
 
 
 def moves2data(true_score, moves):
     board = othello.new_board()
     player = othello.BLACK
+    for i in range(len(moves)-1):
+        if moves[i] == 0:
+            assert moves[i+1] == 0
+
     moves = [m for m in moves if m != 0]  # remove (trailing) zeros
     for move in moves:
         row, col = othello.decode_move(move)
@@ -54,7 +59,7 @@ def moves2data(true_score, moves):
         othello.make_move(board, (row, col), player)
         player = othello.opponent(player)
     if othello.get_true_score(board)[0] != true_score:
-        print("WARNING: {} != {}".format(othello.get_true_score(board), true_score))
+        print("TRUE SCORE WARNING: {} != {}".format(othello.get_true_score(board)[0], true_score))
 
 
 def encode_channels(board, player):
@@ -79,19 +84,55 @@ def create_dataset(out, lmdb=False):
         x[i] = encode_channels(board, player)
         y[i] = move
     if lmdb:
+        from util.io import save_lmdb
         save_lmdb(out, x, y)
     return x, y
 
 
 def get_learning_data():
-    return pickle.load(gzip.open('data.dump', 'rb'))
+    return pickle.load(open('data2.dump', 'rb'))
 
+
+def data_from_black_perspective(data):
+    for board,player,move in data:
+        if player == othello.BLACK: 
+            yield board, player, move
+        else:
+            yield othello.inverted(board), othello.BLACK, move
+
+
+def removed_duplicates(data):
+    x = sorted([(list(x.flatten()),y,z) for x,y,z in data])
+    for i in range(1, len(x)):
+        if x[i-1][0:2] != x[i][0:2] or x[i-1][2] != x[i][2]:
+            yield data[i]
+
+
+def main_remove_duplicates(data): 
+    print("input: {} positions".format(len(data))
+    data = list(data_from_black_perspective(data))
+    data = list(removed_duplicates(data))
+    print("output: {} positions".format(len(data))
+    pickle.dump(data, open('data_nodup.dump', 'wb'))
+    print("finished")
+
+def data_with_symmetries(data):
+    for board,player,move in data:
+        for sym_board, sym_move in zip(othello.symmetric(board),othello.symmetric_move(board))
+            yield sym_board,player,sym_move
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and sys.argv[1] == 'generate':
         data = list(generate_learning_data('wthor_data'))
         pickle.dump(data, gzip.open('data.dump', 'wb'))
 
-    data = get_learning_data()
-    print("read:", len(data), "positions")
-    print("example:", data[0])
+    main_remove_duplicates(pickle.load(open('data.dump', 'rb'))): 
+
+    #data = pickle.load(gzip.open('data_nodup.dump', 'rb'))
+
+    #data = list(remove_duplicates(data_with_symmetries(data[:1000])))
+    #print(len(data))
+
+    #pickle.dump(data, gzip.open('data_nodup_sym.dump', 'wb'))
+
+    #print('end')

@@ -27,6 +27,31 @@ def new_board():
     board[:, [0, WIDTH - 1]] = WALL
     return board
 
+def symmetric(board):
+    for h in [False, True]:
+        for v in [False, True]:
+            for r in [False, True]:
+                new = board.copy()
+                if h: new = np.fliplr(new)
+                if v: new = np.flipud(new)
+                if r: new = np.rot90(new)
+                yield new
+
+def symmetric_move(move):
+    move_row, move_col = move
+    for h in [False, True]:
+        for v in [False, True]:
+            for r in [False, True]:
+                if h: move_row = SIZE - move_row
+                if v: move_col = SIZE - move_col
+                if r: new = np.rot90(new) #START_HERE
+                yield new
+
+
+def inverted(board):
+    """ Works also for margin (if any)"""
+    return 2 - board
+
 
 def make_move(board, move, player):
     move_row, move_col = move
@@ -135,9 +160,16 @@ def to_edax_str(board, player_to_move):
 
 
 def board_to_str(board):
+    if np.shape(board) == (WIDTH, WIDTH):
+        my_range = range(1, SIZE + 1)
+    elif np.shape(board) == (SIZE, SIZE):
+        my_range = range(0, SIZE)
+    else:
+        assert False
+
     s = ''
-    for row in range(1, SIZE + 1):
-        for col in range(1, SIZE + 1):
+    for row in my_range:
+        for col in my_range:
             if board[row][col] == BLACK:
                 s += '* '
             elif board[row][col] == WHITE:
@@ -149,8 +181,15 @@ def board_to_str(board):
 
 
 def print_board(board):
-    for row in range(1, SIZE + 1):
-        for col in range(1, SIZE + 1):
+    if np.shape(board) == (WIDTH, WIDTH):
+        my_range = range(1, SIZE + 1)
+    elif np.shape(board) == (SIZE, SIZE):
+        my_range = range(0, SIZE)
+    else:
+        assert False
+
+    for row in my_range:
+        for col in my_range:
             if board[row][col] == BLACK:
                 print('* ', end='')
             elif board[row][col] == WHITE:
