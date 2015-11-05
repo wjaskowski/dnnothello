@@ -118,7 +118,7 @@ def data_with_symmetries(data):
 
 # First experiment 
 def main_remove_duplicates(): 
-    data = pickle.load(open('data.dump', 'rb'))  # Possibly: gzip.load
+    data = pickle.load(open('data.dump', 'rb'))  # Possibly: gzip.open
     print("input: {} positions".format(len(data)))
     data = list(data_from_black_perspective(data))
     data = list(removed_duplicates(data))
@@ -138,9 +138,6 @@ def main_extended_symmetric():
     print("output: {} positions".format(len(data)))
     pickle.dump(data, gzip.open('data_sym.dump', 'wb'))
     print("finished")
-    for dat in data:
-        print(dat)
-        print()
 
 
 if __name__ == '__main__':
