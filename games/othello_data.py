@@ -109,16 +109,16 @@ def removed_duplicates(data):
 
 
 def main_remove_duplicates(data): 
-    print("input: {} positions".format(len(data))
+    print("input: {} positions".format(len(data)))
     data = list(data_from_black_perspective(data))
     data = list(removed_duplicates(data))
-    print("output: {} positions".format(len(data))
-    pickle.dump(data, open('data_nodup.dump', 'wb'))
+    print("output: {} positions".format(len(data)))
+    pickle.dump(data, gzip.open('data_nodup.dump', 'wb'))
     print("finished")
 
 def data_with_symmetries(data):
     for board,player,move in data:
-        for sym_board, sym_move in zip(othello.symmetric(board),othello.symmetric_move(board))
+        for sym_board, sym_move in zip(othello.symmetric(board),othello.symmetric_move(board)):
             yield sym_board,player,sym_move
 
 if __name__ == '__main__':
@@ -126,7 +126,7 @@ if __name__ == '__main__':
         data = list(generate_learning_data('wthor_data'))
         pickle.dump(data, gzip.open('data.dump', 'wb'))
 
-    main_remove_duplicates(pickle.load(open('data.dump', 'rb'))): 
+    main_remove_duplicates(pickle.load(open('data.dump', 'rb')))
 
     #data = pickle.load(gzip.open('data_nodup.dump', 'rb'))
 

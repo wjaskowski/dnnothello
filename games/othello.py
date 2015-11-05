@@ -197,12 +197,3 @@ def print_board(board):
             else:
                 print('- ', end='')
         print()
-
-
-def invert(board):
-    copied = board.copy()
-    mask_white = board == WHITE
-    mask_black = board == BLACK
-    copied[mask_white] = BLACK
-    copied[mask_black] = WHITE
-    return copied
