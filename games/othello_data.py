@@ -139,6 +139,7 @@ def main_extended_symmetric():
     pickle.dump(data, gzip.open('data_sym.dump', 'wb'))
     print("finished")
 
+random.seed(123)
 
 if __name__ == '__main__':
     if len(sys.argv) >= 2 and sys.argv[1] == 'generate':
