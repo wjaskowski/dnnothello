@@ -7,6 +7,7 @@ import pickle
 import gzip
 import numpy as np
 import sys
+import random
 
 from games import othello
 
@@ -112,6 +113,7 @@ def main_remove_duplicates(data):
     print("input: {} positions".format(len(data)))
     data = list(data_from_black_perspective(data))
     data = list(removed_duplicates(data))
+    random.shuffle(data)
     print("output: {} positions".format(len(data)))
     pickle.dump(data, gzip.open('data_nodup.dump', 'wb'))
     print("finished")
