@@ -14,6 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', required=True)
 
     parser.add_argument('--model_type', default='cnn_nopool')
+    parser.add_argument('--solver_type', default='sgd')
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--opt_acc', action='store_true')
     parser.add_argument('--train_batch', type=int, default=256)
@@ -28,7 +29,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # create train and test sets
-    split_train_test(args.out_path, args.data_path, args.model_type, args.train_batch, args.test_batch, args.iters,
+    split_train_test(args.out_path, args.data_path, args.model_type, args.solver_type, args.train_batch, args.test_batch, args.iters,
                      args.lr, args.gamma, args.step)
 
     # train the networks
