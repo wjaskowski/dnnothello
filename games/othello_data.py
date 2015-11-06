@@ -64,33 +64,6 @@ def moves2data(true_score, moves):
         print("TRUE SCORE WARNING: {} != {}".format(othello.get_true_score(board)[0], true_score))
 
 
-def encode_channels(board, player):
-    """
-    Encodes the board in two 8x8 binary matrices.
-    The first matrix has ones indicating the fields occupied by the player who is about to play.
-    The second matrix has ones where the opponent's pieces are.
-
-    Returns 2x8x8 array.
-    """
-    c1 = board == player
-    c2 = board == othello.opponent(player)
-    return np.concatenate((c1[None, ...], c2[None, ...]), axis=0)
-
-
-def create_dataset(out, lmdb=False):
-    data = list(generate_learning_data('wthor_data'))
-
-    x = np.zeros(((len(data),) + (2, 8, 8)), dtype=np.uint8)
-    y = np.zeros(len(data), dtype=np.uint8)
-    for i, (board, player, move) in enumerate(data):
-        x[i] = encode_channels(board, player)
-        y[i] = move
-    if lmdb:
-        from util.io import save_lmdb
-        save_lmdb(out, x, y)
-    return x, y
-
-
 def get_learning_data():
     return pickle.load(open('data2.dump', 'rb'))
 

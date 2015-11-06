@@ -127,6 +127,12 @@ def opponent(player):
     return WHITE if player == BLACK else BLACK
 
 
+def add_walls(board):
+    new = new_board()
+    new[1:-1, 1:-1] = board
+    return new
+
+
 def get_score(board):
     b = (board[1:-1, 1:-1] == BLACK).sum()
     w = (board[1:-1, 1:-1] == WHITE).sum()

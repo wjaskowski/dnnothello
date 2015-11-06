@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.externals import joblib
 from dnn.nets import load_net, predict
 from games import othello
-from games.othello_data import encode_channels
+from dnn.dataset import encode_channels
 
 __author__ = 'pliskowski'
 
@@ -22,7 +22,7 @@ def create_dnn_agent(model_dir, model_name, input_size=8, channels=2, batch_size
 
     def dnn_agent(board, my_color):
         if my_color == othello.WHITE:
-            board = othello.invert(board)
+            board = othello.inverted(board)
             my_color = othello.opponent(my_color)
         probabilities = predict(net, [encode_channels(board[1:-1, 1:-1], my_color)])[0]
         move = get_move(probabilities)

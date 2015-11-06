@@ -1,13 +1,22 @@
+import gzip
+from itertools import islice
 import numpy as np
 import os
+import pickle
+import logging
+
 from sklearn.externals import joblib
 from os.path import join
 
 from sklearn.cross_validation import train_test_split
 from sklearn import preprocessing
+from games import othello
+from games.othello import add_walls
+from games.othello_data import generate_learning_data
 
 from util.io import LMDBReader, save_lmdb
 from dnn.nets import deploy_model
+from util.utils import create_dir
 
 __author__ = 'pliskowski'
 
@@ -53,5 +62,68 @@ def get_label_encoder(labels=None):
     le.fit(labels)
     return le
 
+
+def encode_channels(board, player):
+    """
+    Encodes the board into 2x8x8 binary matrix.
+    The first matrix has ones indicating the fields occupied by the player who is about to play.
+    The second matrix has ones where the opponent's pieces are.
+
+    Returns 2x8x8 array.
+    """
+    c1 = board == player
+    c2 = board == othello.opponent(player)
+    return np.concatenate((c1[None, ...], c2[None, ...]), axis=0)
+
+
+def encode_valid_moves(board, player):
+    """
+    Encodes the board into 3x8x8 binary matrix.
+    The third channels contains ones for every valid moves.
+    """
+
+    def mark_valid_moves(board):
+        moves = np.zeros(board.shape, dtype=np.uint8)
+        for r, c in othello.valid_moves(board, player):
+            moves[r, c] = 1
+        return moves[1:-1, 1:-1]
+
+    c1 = board == player
+    c2 = board == othello.opponent(player)
+    c3 = mark_valid_moves(add_walls(board))
+    return np.concatenate((c1[None, ...].astype(np.uint8), c2[None, ...].astype(np.uint8), c3[None, ...]), axis=0)
+
+
+def create_dataset(out, data_path, encoder=encode_channels, shape=(2, 8, 8), lmdb=False):
+    create_dir(out)
+    data = pickle.load(gzip.open(data_path, 'rb'))
+
+    x = np.zeros(((len(data),) + shape), dtype=np.uint8)
+    y = np.zeros(len(data), dtype=np.uint8)
+    for i, (board, player, move) in enumerate(data):
+        x[i] = encoder(board, player)
+        y[i] = move
+    if lmdb:
+        save_lmdb(out, x, y)
+    return x, y
+
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s.%(msecs)03d [%(levelname)s] [%(threadName)s] '
+                           '(%(filename)s:%(lineno)d) -- %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+logger = logging.getLogger(__name__)
+
 if __name__ == '__main__':
-    get_num_unique_labels()
+    # get_num_unique_labels()
+    data_path = '/home/pliskowski/Documents/repositories/dlothello/games/data_nodup.dump'
+
+    logger.info('Started building LMDB for nodup')
+    create_dataset('./new-train-nodup', data_path, encode_channels, shape=(2, 8, 8), lmdb=True)
+
+    logger.info('Started building LMDB for nodup-vmoves')
+    create_dataset('./new-train-nodup-vmoves', data_path, encode_valid_moves, shape=(3, 8, 8), lmdb=True)
+
+    logger.info('Done')
+
