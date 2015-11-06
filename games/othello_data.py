@@ -40,6 +40,8 @@ def generate_learning_data(path='wthor_data'):
         if i % 1000 == 0: print(i)
         for board, player, move in moves2data(true_score, moves):
             yield board, player, move
+        #if i % 1000 == 0:
+        #    break
 
 
 def moves2data(true_score, moves):
@@ -117,12 +119,12 @@ def removed_duplicates(data):
         x = board.flatten()
         return sum(x[:N*N//2] * coding), sum(x[N*N//2:] * coding)
 
-    x = [(compress(x), y, z) for x, y, z in data]
-    x.sort()
-    yield data[0]
+    x = [(compress(x), y, z, x) for x, y, z in data]
+    x.sort(key=lambda x: x[:3])
+    yield x[0][3]
     for i in range(1, len(x)):
         if x[i-1][0:2] != x[i][0:2] or x[i-1][2] != x[i][2]:
-            yield data[i]
+            yield x[i][3]
 
 def data_with_symmetries(data):
     for board, player, raw_move in data:
