@@ -121,10 +121,11 @@ def removed_duplicates(data):
 
     x = [(compress(x), y, z, x) for x, y, z in data]
     x.sort(key=lambda x: x[:3])
-    yield x[0][3]
+    yield x[0][3], x[0][1], x[0][2]
     for i in range(1, len(x)):
         if x[i-1][0:2] != x[i][0:2] or x[i-1][2] != x[i][2]:
-            yield x[i][3]
+            yield x[i][3], x[i][1], x[i][2]
+
 
 def data_with_symmetries(data):
     for board, player, raw_move in data:
@@ -135,7 +136,7 @@ def data_with_symmetries(data):
 
 # First experiment 
 def main_remove_duplicates(): 
-    data = pickle.load(open('data.dump', 'rb'))  # Possibly: gzip.open
+    data = pickle.load(gzip.open('data.dump', 'rb'))
     print("input: {} positions".format(len(data)))
     data = list(data_from_black_perspective(data))
     data = list(removed_duplicates(data))
