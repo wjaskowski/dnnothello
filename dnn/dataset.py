@@ -21,7 +21,7 @@ from util.utils import create_dir
 __author__ = 'pliskowski'
 
 
-def split_train_test(experiment_dir, data_path, model_type, train_batch, test_batch, iters, lr, gamma, step,
+def split_train_test(experiment_dir, data_path, model_type, solver_type, train_batch, test_batch, iters, lr, gamma, step,
                      test_size=0.33, seed=123):
     model_dir = join(experiment_dir, model_type)
     if not os.path.exists(model_dir):
@@ -43,7 +43,7 @@ def split_train_test(experiment_dir, data_path, model_type, train_batch, test_ba
     save_lmdb(join(dataset_dir, 'train'), x_train, y_train)
     save_lmdb(join(dataset_dir, 'test'), x_test, y_test)
 
-    deploy_model(model_dir, dataset_dir, model_type, train_batch, test_batch, iters, model_type, lr, gamma, step)
+    deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, iters, model_type, lr, gamma, step)
 
 
 def get_num_unique_labels():
