@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import division
 import struct
 import glob
 import os
@@ -39,8 +40,6 @@ def generate_learning_data(path='wthor_data'):
         if i % 1000 == 0: print(i)
         for board, player, move in moves2data(true_score, moves):
             yield board, player, move
-        if i>0 and i % 1000 == 0:
-            break
 
 
 def moves2data(true_score, moves):
@@ -103,7 +102,23 @@ def data_from_black_perspective(data):
 
 
 def removed_duplicates(data):
-    x = sorted([(list(x.flatten()),y,z) for x,y,z in data])
+    N = othello.SIZE
+    def coding_board():
+        a = 1
+        coding = np.zeros(N*N//2)
+        for i in range(N*N//2):
+            coding[i] = a
+            a *= 3
+        return coding 
+
+    coding = coding_board()
+
+    def compress(board):
+        x = board.flatten()
+        return sum(x[:N*N//2] * coding), sum(x[N*N//2:] * coding)
+
+    x = [(compress(x), y, z) for x, y, z in data]
+    x.sort()
     yield data[0]
     for i in range(1, len(x)):
         if x[i-1][0:2] != x[i][0:2] or x[i-1][2] != x[i][2]:
