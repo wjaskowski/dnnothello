@@ -2,7 +2,7 @@ import gzip
 from itertools import islice
 import numpy as np
 import os
-import pickle
+import cPickle as pickle
 import logging
 
 from sklearn.externals import joblib
@@ -116,14 +116,16 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    # get_num_unique_labels()
-    data_path = '/home/pliskowski/Documents/repositories/dlothello/games/data_nodup.dump'
+    data_path = '/home/pliskowski/Documents/repositories/dlothello/games/data_sym.dump'
 
-    logger.info('Started building LMDB for nodup')
-    create_dataset('./new-train-nodup', data_path, encode_channels, shape=(2, 8, 8), lmdb=True)
+    logger.info('Started building LMDB for sym')
+    create_dataset('./new-train-sym', data_path, encode_channels, shape=(2, 8, 8), lmdb=True)
 
-    logger.info('Started building LMDB for nodup-vmoves')
-    create_dataset('./new-train-nodup-vmoves', data_path, encode_valid_moves, shape=(3, 8, 8), lmdb=True)
+    logger.info('Started building LMDB for sym-vmoves')
+    create_dataset('./new-train-sym-vmoves', data_path, encode_valid_moves, shape=(3, 8, 8), lmdb=True)
 
     logger.info('Done')
 
+    # data_path = '/home/pliskowski/Documents/repositories/dlothello/games/data.dump'
+    # logger.info('Started building LMDB for original')
+    # create_dataset('./original', data_path, encode_channels, shape=(2, 8, 8), lmdb=True)

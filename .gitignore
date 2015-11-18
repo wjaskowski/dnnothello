@@ -1,2 +1,4 @@
 data.dump
+data_nodup.dump
+data_sym.dump
 *.pyc

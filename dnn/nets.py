@@ -161,7 +161,7 @@ def create_sgd_solver(out, train_net, test_net, iters=30000, snapshot_prefix='mo
         fp.writelines([k + ': ' + str(v) + '\n' for k, v in config.iteritems()])
 
 
-def create_rmsprop_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model', base_lr=0.1, gamma=0.33,
+def create_rmsprop_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model', base_lr=0.001, gamma=0.0001,
                           step_size=10000):
     def decorate_with_quotation(text):
         return '\"' + text + '\"'
@@ -195,13 +195,12 @@ def create_rmsprop_solver(out, train_net, test_net, iters=30000, snapshot_prefix
 
 
 def deploy_model(model_dir, data_dir, model_type='cnn', solver_type='sgd', train_batch=256, test_batch=100, iters=30000,
-                 prefix='model',
-                 lr=0.001, gamma=0.1, step=10000):
+                 prefix='model', lr=0.001, gamma=0.1, step=10000):
     with open(join(model_dir, 'train.prototxt'), 'w') as f:
         f.write(str(getattr(sys.modules[__name__], model_type)(join(data_dir, 'train'), train_batch)))
 
     with open(join(model_dir, 'test.prototxt'), 'w') as f:
-        f.write(str(getattr(sys.modules[__name__], model_type)(join(data_dir, 'test'), test_batch, )))
+        f.write(str(getattr(sys.modules[__name__], model_type)(join(data_dir, 'test'), test_batch)))
 
     solver_creator = create_sgd_solver
     if solver_type == 'sgd':

@@ -3,6 +3,7 @@
 
 from __future__ import print_function
 import os
+from dnn.agent import create_dnn_agent
 import othello
 import random
 from subprocess import Popen, PIPE
@@ -10,20 +11,26 @@ import numpy as np
 import logging
 
 logging.basicConfig(filename="benchmark.log", filemode='w', format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-        datefmt='%H:%M:%S', level=logging.WARN)
+        datefmt='%H:%M:%S', level=logging.INFO)
 log = logging.getLogger("benchmark")
+log.setLevel(logging.INFO)
+
+# for linux
+EDAX_EXEC_FILE = './lEdax-x64-modern -q '
+# for mac
+# EDAX_EXEC_FILE = 'mEdax -q '
 
 class Edax:
-    def __init__(self, edax_arguments):
+    def __init__(self, edax_path, edax_arguments):
         old_dir = os.getcwd()
-        os.chdir(EDAX_BIN_PATH)
-        cmd = [x for x in ('mEdax -q ' + edax_arguments).split(' ') if x != '']
+        os.chdir(edax_path)
+        cmd = [x for x in (EDAX_EXEC_FILE + edax_arguments).split(' ') if x != '']
         self.process = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE)
         out = self._read_all()
         os.chdir(old_dir)
 
     def reset(self, initial_board, color_to_move):
-        s = othello.to_edax_str(initial_board, color_to_move) 
+        s = othello.to_edax_str(initial_board, color_to_move)
         self.process.stdin.write('setboard {}\n'.format(s))
         out = self._read_all()
 
@@ -57,7 +64,6 @@ class Edax:
     def play_move(self):
         self.process.stdin.write('go\n')
         out = ''.join(self._read_all())
-        #print(out)
         move_col, move_row = out[-3:-1]
         move_col = ord(move_col) - ord('A') + 1
         move_row = int(move_row)
@@ -103,9 +109,9 @@ def play_against_edax(edax, initial_board, color_to_move, my_color, my_agent):
     return score
 
 
-def benchmark_edax(edax_options, initial_states, agent):
+def benchmark_edax(edax_path, edax_options, initial_states, agent):
     """ play double games """
-    with Edax(edax_options) as edax:
+    with Edax(edax_path, edax_options) as edax:
         my_points = edax_points = wins = loses = draws = 0
         for i, (board, color_to_move) in enumerate(initial_states):
             log.debug('initial state no: ' + str(i))
@@ -113,7 +119,7 @@ def benchmark_edax(edax_options, initial_states, agent):
             #print(color_to_move)
             for my_color in [othello.BLACK, othello.WHITE]:
                 my_score, edax_score = play_against_edax(edax, board, color_to_move, my_color, agent)
-                print('{:2d} {:2d}'.format(my_score, edax_score))
+                # print('{:2d} {:2d}'.format(my_score, edax_score))
 
                 my_points += my_score
                 edax_points += edax_score
@@ -160,13 +166,13 @@ if __name__ == '__main__':
     EDAX_BIN_PATH='/Users/Wojciech/projects/edax/edax/4.3.2/bin'
 
     # Edax (depth=1, opening book) vs. agent on all (1000) initial states (double games)
-    my_points, edax_points, wins, draws, loses = benchmark_edax('-l 1 -book-file data/book_good.dat', read_initial_states(), random_agent)
+    my_points, edax_points, wins, draws, loses = benchmark_edax(EDAX_BIN_PATH, '-l 1 -book-file data/book_good.dat', read_initial_states(), random_agent)
 
     # Edax (depth=1, no opening book) vs. agent on all (1000) initial states (double games)
-    #my_points, edax_points, wins, draws, loses = benchmark_edax('-l 1', read_initial_states(), random_agent)
+    #my_points, edax_points, wins, draws, loses = benchmark_edax(EDAX_BIN_PATH, '-l 1', read_initial_states(), random_agent)
 
-    # Edax (depth=1, no opening book) vs. agent on all (1000) initial states (double games)
-    #my_points, edax_points, wins, draws, loses = benchmark_edax('-l 21 -book-file data/book_good.dat', read_initial_states(), random_agent)
+    # Edax (depth=21, no opening book) vs. agent on all (1000) initial states (double games)
+    #my_points, edax_points, wins, draws, loses = benchmark_edax(EDAX_BIN_PATH, '-l 21 -book-file data/book_good.dat', read_initial_states(), random_agent)
 
     print('\nFinal result:')
     print(my_points, edax_points, wins, draws, loses)

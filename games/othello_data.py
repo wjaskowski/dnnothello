@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import division
+import logging
 import struct
 import glob
 import os
-import pickle
+import cPickle as pickle
 import gzip
 import numpy as np
 import sys
@@ -110,26 +111,33 @@ def data_with_symmetries(data):
 # First experiment 
 def main_remove_duplicates(): 
     data = pickle.load(gzip.open('data.dump', 'rb'))
-    print("input: {} positions".format(len(data)))
+    logger.info("input: {} positions".format(len(data)))
     data = list(data_from_black_perspective(data))
     data = list(removed_duplicates(data))
     random.shuffle(data)
-    print("output: {} positions".format(len(data)))
+    logger.info("output: {} positions".format(len(data)))
     pickle.dump(data, gzip.open('data_nodup.dump', 'wb'))
-    print("finished")
+    logger.info("finished")
 
 
 # Second experiment 
 def main_extended_symmetric(): 
     data = pickle.load(gzip.open('data_nodup.dump', 'rb'))
-    print("input: {} positions".format(len(data)))
+    logger.info("input: {} positions".format(len(data)))
     data = list(data_with_symmetries(data))
     data = list(removed_duplicates(data))
     random.shuffle(data)
-    print("output: {} positions".format(len(data)))
+    logger.info("output: {} positions".format(len(data)))
     pickle.dump(data, gzip.open('data_sym.dump', 'wb'))
-    print("finished")
+    logger.info("finished")
 
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s.%(msecs)03d [%(levelname)s] [%(threadName)s] '
+                           '(%(filename)s:%(lineno)d) -- %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
+logger = logging.getLogger(__name__)
 random.seed(123)
 
 if __name__ == '__main__':
