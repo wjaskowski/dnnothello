@@ -20,9 +20,16 @@ from util.utils import create_dir
 
 __author__ = 'pliskowski'
 
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s.%(msecs)03d [%(levelname)s] [%(threadName)s] '
+                           '(%(filename)s:%(lineno)d) -- %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
 
-def split_train_test(experiment_dir, data_path, model_type, solver_type, train_batch, test_batch, iters, lr, gamma, step,
-                     test_size=0.33, seed=123):
+logger = logging.getLogger(__name__)
+
+
+def split_train_test(experiment_dir, data_path, model_type, solver_type, train_batch, test_batch, train_iters,
+                     test_interval, lr, gamma, step, test_size=0.33, seed=123):
     model_dir = join(experiment_dir, model_type)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
@@ -40,10 +47,15 @@ def split_train_test(experiment_dir, data_path, model_type, solver_type, train_b
 
     x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=seed)
 
+    train_set_size = len(y_train)
+    test_set_size = len(y_test)
+
+    logger.info('Creating lmdbs: train_size={} test_size={}'.format(train_set_size, test_set_size))
     save_lmdb(join(dataset_dir, 'train'), x_train, y_train)
     save_lmdb(join(dataset_dir, 'test'), x_test, y_test)
 
-    deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, iters, model_type, lr, gamma, step)
+    deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,
+                 train_iters, model_type, lr, gamma, step)
 
 
 def get_num_unique_labels():
@@ -107,13 +119,6 @@ def create_dataset(out, data_path, encoder=encode_channels, shape=(2, 8, 8), lmd
         save_lmdb(out, x, y)
     return x, y
 
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s.%(msecs)03d [%(levelname)s] [%(threadName)s] '
-                           '(%(filename)s:%(lineno)d) -- %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
-
-logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     data_path = '/home/pliskowski/Documents/repositories/dlothello/games/data_sym.dump'

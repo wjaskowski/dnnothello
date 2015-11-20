@@ -65,8 +65,9 @@ def cnn_nopool(source, batch_size, input_size=None, deploy=False):
 
     n.data, n.label = L.Data(batch_size=batch_size, backend=P.Data.LMDB, source=source, ntop=2)
 
-    n.conv1 = L.Convolution(n.data, num_output=64, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'),
-                            bias_filler=dict(type='constant', value=0))
+    # param=[dict(lr_mult=1,decay_mult=1),dict(lr_mult=2,decay_mult=0)],
+    n.conv1 = L.Convolution(n.data, num_output=64, kernel_size=3, stride=1,
+                            pad=1, weight_filler=dict(type='xavier'), bias_filler=dict(type='constant', value=0))
     n.relu1 = L.ReLU(n.conv1, in_place=True)
     n.conv2 = L.Convolution(n.relu1, num_output=64, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'),
                             bias_filler=dict(type='constant', value=0))
@@ -130,16 +131,16 @@ def convert_proto_to_deploy(proto_file, batch_size, channels, patch_size):
     return deploy_str + '\n' + 'layer {' + 'layer {'.join(train_proto.split('layer {')[2:-2]) + '\n' + softmax_str
 
 
-def create_sgd_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model', base_lr=0.1, gamma=0.33,
-                      step_size=10000):
+def create_sgd_solver(out, train_net, test_net, test_iter, test_interval, train_iters=30000, snapshot_prefix='model',
+                      base_lr=0.1, gamma=0.33, step_size=10000):
     def decorate_with_quotation(text):
         return '\"' + text + '\"'
 
     config = {
         'train_net': decorate_with_quotation(train_net),
         'test_net': decorate_with_quotation(test_net),
-        'test_iter': '400',
-        'test_interval': '625',
+        'test_iter': test_iter,
+        'test_interval': test_interval,
         'test_initialization': 'false',
 
         'base_lr': base_lr,
@@ -151,7 +152,7 @@ def create_sgd_solver(out, train_net, test_net, iters=30000, snapshot_prefix='mo
         'stepsize': step_size,
 
         'display': '200',
-        'max_iter': iters,
+        'max_iter': train_iters,
 
         'snapshot': '5000',
         'snapshot_prefix': decorate_with_quotation(snapshot_prefix),
@@ -161,16 +162,16 @@ def create_sgd_solver(out, train_net, test_net, iters=30000, snapshot_prefix='mo
         fp.writelines([k + ': ' + str(v) + '\n' for k, v in config.iteritems()])
 
 
-def create_rmsprop_solver(out, train_net, test_net, iters=30000, snapshot_prefix='model', base_lr=0.001, gamma=0.0001,
-                          step_size=10000):
+def create_rmsprop_solver(out, train_net, test_net, test_iter, test_interval, train_iters=30000,
+                          snapshot_prefix='model', base_lr=0.001, gamma=0.0001, step_size=10000):
     def decorate_with_quotation(text):
         return '\"' + text + '\"'
 
     config = {
         'train_net': decorate_with_quotation(train_net),
         'test_net': decorate_with_quotation(test_net),
-        'test_iter': '400',
-        'test_interval': '625',
+        'test_iter': test_iter,
+        'test_interval': test_interval,
         'test_initialization': 'false',
 
         'base_lr': base_lr,
@@ -182,7 +183,7 @@ def create_rmsprop_solver(out, train_net, test_net, iters=30000, snapshot_prefix
         'power': 0.75,
 
         'display': '200',
-        'max_iter': iters,
+        'max_iter': train_iters,
 
         'snapshot': '5000',
         'snapshot_prefix': decorate_with_quotation(snapshot_prefix),
@@ -194,8 +195,8 @@ def create_rmsprop_solver(out, train_net, test_net, iters=30000, snapshot_prefix
         fp.writelines([k + ': ' + str(v) + '\n' for k, v in config.iteritems()])
 
 
-def deploy_model(model_dir, data_dir, model_type='cnn', solver_type='sgd', train_batch=256, test_batch=100, iters=30000,
-                 prefix='model', lr=0.001, gamma=0.1, step=10000):
+def deploy_model(model_dir, data_dir, model_type='cnn', solver_type='sgd', train_batch=256, test_batch=100,
+                 test_set_size=0, test_interval=1000, train_iters=30000, prefix='model', lr=0.001, gamma=0.1, step=10000):
     with open(join(model_dir, 'train.prototxt'), 'w') as f:
         f.write(str(getattr(sys.modules[__name__], model_type)(join(data_dir, 'train'), train_batch)))
 
@@ -204,16 +205,19 @@ def deploy_model(model_dir, data_dir, model_type='cnn', solver_type='sgd', train
 
     solver_creator = create_sgd_solver
     if solver_type == 'sgd':
-        print 'Using SGD'
+        print 'Using SGD\n'
         solver_creator = create_sgd_solver
     elif solver_type == 'rmsprop':
-        print 'Using RMSProp'
+        print 'Using RMSProp\n'
         solver_creator = create_rmsprop_solver
 
+    test_iters = test_set_size / test_batch
     solver_creator(join(model_dir, 'solver.prototxt'),
                    join(model_dir, 'train.prototxt'),
                    join(model_dir, 'test.prototxt'),
-                   iters,
+                   test_iters,
+                   test_interval,
+                   train_iters,
                    join(model_dir, prefix),
                    lr,
                    gamma,
