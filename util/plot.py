@@ -8,7 +8,13 @@ import matplotlib.pyplot as plot
 import matplotlib.cm as cm
 from matplotlib.ticker import FuncFormatter
 from matplotlib import rc
+import pandas as pd
+import seaborn as sns
 
+pd.set_option('display.height', 1000)
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
 
 matplotlib.use('Agg')
 
@@ -34,7 +40,7 @@ def hms(seconds, pos):
     return '%d:%02d' % (h, m)
 
 
-def plot_train_loss(title, train_data, batch_size, ax, x_ticks=True, y_ticks=True, plot_title=True,
+def plot_train_loss(title, train_data, batch_size, ax, x_ticks=True, y_ticks=True, plot_title=False,
                   plot_labels_bot=True, plot_labels_left=True, plot_labels_right=True):
     """
     NumIters,Seconds,LearningRate,loss
@@ -72,7 +78,8 @@ def plot_train_loss(title, train_data, batch_size, ax, x_ticks=True, y_ticks=Tru
     ax3.set_xticks(np.linspace(0, ax3.get_xbound()[1], 6))
 
     if plot_title:
-        ax.set_title('$\\textsc{' + title + '}$', y=1.1)
+        # ax.set_title('$\\textsc{' + title + '}$', y=1.1)
+        ax.set_title(title, y=1.1)
 
     ax.xaxis.set_tick_params(length=2)
     ax.yaxis.set_tick_params(length=2)
@@ -86,6 +93,7 @@ def plot_train_loss(title, train_data, batch_size, ax, x_ticks=True, y_ticks=Tru
     handles1, labels1 = ax.get_legend_handles_labels()
     # handles2, labels2 = ax2.get_legend_handles_labels()
     return handles1, labels1
+
 
 def plot_test_loss_acc(title, test_data, batch_size, ax, x_ticks=True, y_ticks=True, plot_title=True,
                   plot_labels_bot=True, plot_labels_left=True, plot_labels_right=True):
@@ -122,7 +130,8 @@ def plot_test_loss_acc(title, test_data, batch_size, ax, x_ticks=True, y_ticks=T
     ax3.set_xticks(np.linspace(0, ax3.get_xbound()[1], 6))
 
     if plot_title:
-        ax.set_title('$\\textsc{' + title + '}$', y=1.1)
+        # ax.set_title('$\\textsc{' + title + '}$', y=1.1)
+        ax.set_title(title, y=1.1)
 
     ax.xaxis.set_tick_params(length=2)
     ax.yaxis.set_tick_params(length=2)
@@ -147,14 +156,14 @@ def plot_all(nets_dir, out, cols=4, share_x=True, share_y=False, figsize=(8, 9))
 
     nets_in_cols = cols / 2
     num_rows = len(train_test_data) / nets_in_cols
-    f, axes = plot.subplots(1, 2, sharex=share_x, sharey=share_y, figsize=figsize)
+    f, axes = plot.subplots(int(num_rows), int(cols), sharex=share_x, sharey=share_y, figsize=figsize)
 
     for i, axs in enumerate(axes[0::2]):
         for ax_even, data in izip_longest(axs, train_test_data[i*cols:i*cols+cols]):
             if data is None:
                 ax_even.axis('off')
                 continue
-            train_d, test_d, net_name, batch_size = data
+            train_d, test_d, batch_size, net_name = data
             handles1, labels1 = plot_train_loss(net_name, train_d, batch_size, ax_even)
 
     for i, axs in enumerate(axes[1::2]):
@@ -162,12 +171,19 @@ def plot_all(nets_dir, out, cols=4, share_x=True, share_y=False, figsize=(8, 9))
             if data is None:
                 ax_odd.axis('off')
                 continue
-            train_d, test_d, net_name, batch_size = data
+            train_d, test_d, batch_size, net_name = data
             handles2, labels2 = plot_test_loss_acc(net_name, test_d, batch_size, ax_odd, plot_title=False)
 
+
+    # ax1 = axes[1][0]
+    for i, axs in enumerate(axes[1::2]):
+        ax1 = axs[0]
+        for axx in axs[1:]:
+            ax1.get_shared_y_axes().join(ax1, axx)
+            ax1.get_shared_x_axes().join(ax1, axx)
     # legend
-    lgd = plot.figlegend(handles1 + handles2, labels1 + labels2, 'lower center', bbox_to_anchor=(0.45, 0.0), fancybox=True, shadow=False, ncol=6)
-    lgd.get_frame().set_linewidth(0.0)
+    # lgd = plot.figlegend(handles1 + handles2, labels1 + labels2, 'lower center', bbox_to_anchor=(0.45, 0.0), fancybox=True, shadow=False, ncol=6)
+    # lgd.get_frame().set_linewidth(0.0)
 
     plot.subplots_adjust(bottom=0.14)
     plot.subplots_adjust(hspace=0.4)
@@ -183,16 +199,58 @@ def plot_all(nets_dir, out, cols=4, share_x=True, share_y=False, figsize=(8, 9))
     plot.savefig(out)
 
 
+def plot_acc(paths, names):
+    """
+    NumIters,Seconds,LearningRate,loss
+
+    """
+    frames = []
+    for path, name in zip(paths, names):
+        train_data, test_data, batch_size = parse_log(path)
+        # make 'numiters' normal column
+        test_data.reset_index(level=0, inplace=True)
+        # turn it examples seen
+        test_data['NumIters'] *= batch_size
+        # do some renaming
+        test_data.rename(columns={'NumIters': 'ExamplesSeen'}, inplace=True)
+        # test_data.columns = map(lambda col_name: name+ '-'+col_name, test_data.columns)
+        # concatenate
+        test_data['alg'] = name
+        test_data['unit'] = 1
+        frames.append(test_data)
+
+    df = pd.concat(frames, ignore_index=True)
+    #sns.palplot(sns.color_palette("Set2", 10))
+    ax = sns.tsplot(df, time='ExamplesSeen', value='acc', condition='alg', unit='unit')
+    ax.set_ylim(0.46, 0.60)
+    ax.set_xlim(0, 80000000)
+    plot.savefig('out.pdf')
+
 if __name__ == '__main__':
     from parse_log import parse_log
 
-    train_dict_list, test_dict_list, batch_size = parse_log('/home/pliskowski/Documents/experiments/othello/18-11-2015/no_pool_exp2e/cnn_nopool/log.txt')
-    # fig = plot.figure(1, figsize=(DEFAULT_PLOT_SIZE, DEFAULT_PLOT_SIZE))
-    # ax = fig.add_subplot(1, 2, 1)
+    paths = [
+        '/home/pliskowski/Documents/experiments/othello/18-11-2015/no_pool_exp2e/cnn_nopool/log.txt',
+        '/home/pliskowski/Documents/experiments/BEAM/othello/18-11-2015/no_pool_exp2c/cnn_nopool/log.txt',
+        '/home/pliskowski/Documents/experiments/BEAM/othello/19-11-2015/no_pool_exp2f/cnn_nopool/log.txt',
+        '/home/pliskowski/Documents/experiments/BEAM/othello/18-11-2015/no_pool_exp2b/cnn_nopool/log.txt',
+    ]
+    names = [
+        'exp2e',
+        'exp2c',
+        'exp2f',
+        'exp2b'
+    ]
 
-    # plot_train_loss('ss', train_dict_list, 256, ax)
+    plot_acc(paths, names)
+
+    # train_dict_list, test_dict_list, batch_size = parse_log('/home/pliskowski/Documents/experiments/othello/18-11-2015/no_pool_exp2e/cnn_nopool/log.txt')
+    # fig = plot.figure(1, figsize=(5, 3))
+    # ax = fig.add_subplot(1, 2, 1)
+    #
+    # # plot_train_loss('ss', train_dict_list, 256, ax)
     # plot_test_loss_acc('ss', test_dict_list, 256, ax)
     # fig.savefig('test2.pdf', bbox_inches='tight', pad_inches=0, dpi=300)
     # plot.close()
 
-    plot_all('/home/pliskowski/Documents/experiments/othello/18-11-2015/', 'nets.pdf', share_x=False)
+    # plot_all('/home/pliskowski/Documents/experiments/BEAM/othello/18-11-2015/', './nets.pdf', share_x=True, share_y=True)

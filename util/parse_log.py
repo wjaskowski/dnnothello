@@ -24,7 +24,7 @@ def parse_log(path_to_log):
     regex_train_output = re.compile('Train net output #(\d+): (\S+) = ([\.\deE+-]+)')
     regex_test_output = re.compile('Test net output #(\d+): (\S+) = ([\.\deE+-]+)')
     regex_learning_rate = re.compile('lr = ([-+]?[0-9]*\.?[0-9]+([eE]?[-+]?[0-9]+)?)')
-    regex_batch_size = re.compile('batch_size: [0-9]+')
+    regex_batch_size = re.compile('batch_size: (\d+)')
 
     # Pick out lines of interest
     iteration = -1
@@ -37,11 +37,12 @@ def parse_log(path_to_log):
 
     logfile_year = extract_seconds.get_log_created_year(path_to_log)
     with open(path_to_log) as f:
-        start_time = extract_seconds.get_start_time(f, logfile_year)
+        lines = list(f)
+        start_time = extract_seconds.get_start_time(lines, logfile_year)
 
-        for line in f:
+        for line in lines:
             batch_match = regex_batch_size.search(line)
-            if batch_match:
+            if batch_match and batch_size == -1:
                 batch_size = float(batch_match.group(1))
 
             iteration_match = regex_iteration.search(line)
