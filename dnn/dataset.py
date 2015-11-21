@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def split_train_test(experiment_dir, data_path, model_type, solver_type, train_batch, test_batch, train_iters,
-                     test_interval, lr, gamma, step, test_size=0.33, seed=123):
+                     test_interval, test_percent, lr, gamma, step, steps, test_size=0.33, seed=123):
     model_dir = join(experiment_dir, model_type)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
@@ -54,8 +54,12 @@ def split_train_test(experiment_dir, data_path, model_type, solver_type, train_b
     save_lmdb(join(dataset_dir, 'train'), x_train, y_train)
     save_lmdb(join(dataset_dir, 'test'), x_test, y_test)
 
-    deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,
-                 train_iters, model_type, lr, gamma, step)
+    if solver_type == 'sgd_multistep':
+        deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,
+                     test_percent, train_iters, model_type, lr, gamma, steps)
+    else:
+        deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,
+                     test_percent, train_iters, model_type, lr, gamma, step)
 
 
 def get_num_unique_labels():
