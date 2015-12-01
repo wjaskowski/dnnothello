@@ -46,13 +46,14 @@ def split_train_test(experiment_dir, data_path, model_type, solver_type, train_b
     joblib.dump(encoder, join(dataset_dir, 'encoder.pkl'))
 
     x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=test_size, random_state=seed)
+    x_test, x_val, y_test, y_val = train_test_split(x_test, y_test, test_size=0.5, random_state=seed)
 
     train_set_size = len(y_train)
-    test_set_size = len(y_test)
+    val_set_size = len(y_val)
 
-    logger.info('Creating lmdbs: train_size={} test_size={}'.format(train_set_size, test_set_size))
+    logger.info('Creating lmdbs: train_size={} val_size={}'.format(train_set_size, val_set_size))
     save_lmdb(join(dataset_dir, 'train'), x_train, y_train)
-    save_lmdb(join(dataset_dir, 'test'), x_test, y_test)
+    save_lmdb(join(dataset_dir, 'test'), x_val, y_val)
 
     if solver_type == 'sgd_multistep':
         deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,

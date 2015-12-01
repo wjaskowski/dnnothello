@@ -415,6 +415,44 @@ def cnn_nopool_2fc(source, batch_size, input_size=None, deploy=False):
         n.prob = L.Softmax(n.ip3)
         return deploy_str + '\n' + 'layer {' + 'layer {'.join(str(n.to_proto()).split('layer {')[2:])
 
+def cnn_nopool_2fc_bias(source, batch_size, input_size=None, deploy=False):
+    n = caffe.NetSpec()
+
+    n.data, n.label = L.Data(batch_size=batch_size, backend=P.Data.LMDB, source=source, ntop=2)
+
+    n.conv1 = L.Convolution(n.data, num_output=64, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'))
+    n.relu1 = L.ReLU(n.conv1, in_place=True)
+    n.conv2 = L.Convolution(n.relu1, num_output=64, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'))
+    n.relu2 = L.ReLU(n.conv2, in_place=True)
+
+    n.conv3 = L.Convolution(n.relu2, num_output=128, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'))
+    n.relu3 = L.ReLU(n.conv3, in_place=True)
+    n.conv4 = L.Convolution(n.relu3, num_output=128, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'))
+    n.relu4 = L.ReLU(n.conv4, in_place=True)
+
+    n.conv5 = L.Convolution(n.relu4, num_output=256, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'))
+    n.relu5 = L.ReLU(n.conv5, in_place=True)
+    n.conv6 = L.Convolution(n.relu5, num_output=256, kernel_size=3, stride=1, pad=1, weight_filler=dict(type='xavier'))
+    n.relu6 = L.ReLU(n.conv6, in_place=True)
+
+    n.ip1 = L.InnerProduct(n.relu6, num_output=128, weight_filler=dict(type='gaussian', std=0.01))
+    n.relu7 = L.ReLU(n.ip1, in_place=True)
+    n.ip3 = L.InnerProduct(n.ip1, num_output=60, weight_filler=dict(type='gaussian', std=0.01))
+    n.acc = L.Accuracy(n.ip3, n.label, include=dict(phase=1))
+
+    if not deploy:
+        n.loss = L.SoftmaxWithLoss(n.ip3, n.label)
+        return n.to_proto()
+    else:
+        assert input_size is not None
+        deploy_str = 'input: {}\n' \
+                     'input_dim: {}\n' \
+                     'input_dim: {}\n' \
+                     'input_dim: {}\n' \
+                     'input_dim: {}'.format('"data"', batch_size, 3, input_size, input_size)
+        n.prob = L.Softmax(n.ip3)
+        return deploy_str + '\n' + 'layer {' + 'layer {'.join(str(n.to_proto()).split('layer {')[2:])
+
 
 def cnn_nopool_2fc_256(source, batch_size, input_size=None, deploy=False):
     n = caffe.NetSpec()
