@@ -56,10 +56,10 @@ def split_train_test(experiment_dir, data_path, model_type, solver_type, train_b
     save_lmdb(join(dataset_dir, 'test'), x_val, y_val)
 
     if solver_type == 'sgd_multistep':
-        deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,
+        deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, val_set_size, test_interval,
                      test_percent, train_iters, model_type, lr, gamma, steps, decay)
     else:
-        deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,
+        deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, val_set_size, test_interval,
                      test_percent, train_iters, model_type, lr, gamma, step, decay)
 
 
