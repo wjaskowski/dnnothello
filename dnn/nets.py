@@ -761,7 +761,7 @@ def convert_proto_to_deploy(proto_file, batch_size, channels, patch_size):
 
 
 def create_sgd_solver(out, train_net, test_net, test_iter, test_interval, train_iters=30000, snapshot_prefix='model',
-                      base_lr=0.1, gamma=0.33, step_size=10000):
+                      base_lr=0.1, gamma=0.33, step_size=10000, decay=0.0005):
     def decorate_with_quotation(text):
         return '\"' + text + '\"'
 
@@ -774,7 +774,7 @@ def create_sgd_solver(out, train_net, test_net, test_iter, test_interval, train_
 
         'base_lr': base_lr,
         'momentum': '0.9',
-        'weight_decay': '0.0005',
+        'weight_decay': decay,
 
         'lr_policy': '\"step\"',
         'gamma': gamma,
@@ -785,14 +785,15 @@ def create_sgd_solver(out, train_net, test_net, test_iter, test_interval, train_
 
         'snapshot': '5000',
         'snapshot_prefix': decorate_with_quotation(snapshot_prefix),
-        'solver_mode': 'GPU'
+        'solver_mode': 'GPU',
+        'solver_type': 'SGD'
     }
     with open(out, 'w') as fp:
         fp.writelines([k + ': ' + str(v) + '\n' for k, v in config.iteritems()])
 
 
 def create_sgd_multistep_solver(out, train_net, test_net, test_iter, test_interval, train_iters=30000, snapshot_prefix='model',
-                      base_lr=0.1, gamma=0.33, stepvalues=None):
+                      base_lr=0.1, gamma=0.33, stepvalues=None, decay=0.0005):
     def decorate_with_quotation(text):
         return '\"' + text + '\"'
 
@@ -805,7 +806,7 @@ def create_sgd_multistep_solver(out, train_net, test_net, test_iter, test_interv
 
         'base_lr: {}'.format(base_lr),
         'momentum: 0.9',
-        'weight_decay: 0.0005',
+        'weight_decay: {}'.format(decay),
 
         'lr_policy: \"multistep\"',
         'gamma: {}'.format(gamma),
@@ -825,7 +826,7 @@ def create_sgd_multistep_solver(out, train_net, test_net, test_iter, test_interv
 
 
 def create_rmsprop_solver(out, train_net, test_net, test_iter, test_interval, train_iters=30000,
-                          snapshot_prefix='model', base_lr=0.001, gamma=0.0001, step_size=10000):
+                          snapshot_prefix='model', base_lr=0.001, gamma=0.0001, step_size=10000, decay=0.0005):
     def decorate_with_quotation(text):
         return '\"' + text + '\"'
 
@@ -838,7 +839,7 @@ def create_rmsprop_solver(out, train_net, test_net, test_iter, test_interval, tr
 
         'base_lr': base_lr,
         'momentum': '0',
-        'weight_decay': '0.0005',
+        'weight_decay': decay,
 
         'lr_policy': '\"inv\"',
         'gamma': 0.0001,
@@ -858,7 +859,7 @@ def create_rmsprop_solver(out, train_net, test_net, test_iter, test_interval, tr
 
 
 def deploy_model(model_dir, data_dir, model_type='cnn', solver_type='sgd', train_batch=256, test_batch=100,
-                 test_set_size=0, test_interval=1000, test_percent=0.2, train_iters=30000, prefix='model', lr=0.001, gamma=0.1, step=10000):
+                 test_set_size=0, test_interval=1000, test_percent=0.2, train_iters=30000, prefix='model', lr=0.001, gamma=0.1, step=10000, decay=0.0005):
     with open(join(model_dir, 'train.prototxt'), 'w') as f:
         f.write(str(getattr(sys.modules[__name__], model_type)(join(data_dir, 'train'), train_batch)))
 
@@ -883,7 +884,8 @@ def deploy_model(model_dir, data_dir, model_type='cnn', solver_type='sgd', train
                    join(model_dir, prefix),
                    lr,
                    gamma,
-                   step)
+                   step,
+                   decay)
 
 
 def load_net(model_dir, model_name, input_size, batch_size, channels, model_iter, gpu):

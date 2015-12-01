@@ -1,8 +1,6 @@
 import argparse
-import os
 from os.path import join
 from dnn.dataset import split_train_test
-from dnn.nets import deploy_model
 from dnn.train import train_and_test
 
 __author__ = 'pliskowski'
@@ -26,6 +24,7 @@ if __name__ == '__main__':
     parser.add_argument('--iters', type=int, default=30000)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--gamma', type=float, default=0.1)
+    parser.add_argument('--decay', type=float, default=0.0005)
     parser.add_argument('--step', type=int, default=10000)
     parser.add_argument('--steps', type=int, nargs='+', default=[10000, 20000, 30000])
 
@@ -34,7 +33,7 @@ if __name__ == '__main__':
     # create train and test sets
     split_train_test(args.out_path, args.data_path, args.model_type, args.solver_type, args.train_batch,
                      args.test_batch, args.iters, args.test_interval, args.test_percent, args.lr, args.gamma, args.step,
-                     args.steps)
+                     args.steps, args.decay)
 
     # train the networks
     if args.train:

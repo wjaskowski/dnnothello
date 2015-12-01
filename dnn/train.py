@@ -8,7 +8,7 @@ import logging
 from dnn.classify import compute_acc_thresh, classify
 from dnn.evaluate import ReportBuilder
 from dnn.nets import get_solver, predict
-from util.io import LMDBReader
+from util.dbio import LMDBReader
 from util.redirector import Redirector
 from util.utils import natural_sort_key
 

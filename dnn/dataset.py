@@ -14,7 +14,7 @@ from games import othello
 from games.othello import add_walls
 from games.othello_data import generate_learning_data
 
-from util.io import LMDBReader, save_lmdb
+from util.dbio import LMDBReader, save_lmdb
 from dnn.nets import deploy_model
 from util.utils import create_dir
 
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def split_train_test(experiment_dir, data_path, model_type, solver_type, train_batch, test_batch, train_iters,
-                     test_interval, test_percent, lr, gamma, step, steps, test_size=0.33, seed=123):
+                     test_interval, test_percent, lr, gamma, step, steps, decay, test_size=0.33, seed=123):
     model_dir = join(experiment_dir, model_type)
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
@@ -56,10 +56,10 @@ def split_train_test(experiment_dir, data_path, model_type, solver_type, train_b
 
     if solver_type == 'sgd_multistep':
         deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,
-                     test_percent, train_iters, model_type, lr, gamma, steps)
+                     test_percent, train_iters, model_type, lr, gamma, steps, decay)
     else:
         deploy_model(model_dir, dataset_dir, model_type, solver_type, train_batch, test_batch, test_set_size, test_interval,
-                     test_percent, train_iters, model_type, lr, gamma, step)
+                     test_percent, train_iters, model_type, lr, gamma, step, decay)
 
 
 def get_num_unique_labels():
